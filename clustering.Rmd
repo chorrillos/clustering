@@ -1,61 +1,233 @@
 
 ```{r}
-library(rio)
-data=import("variables.seleccionadas_21FEB.xlsx")
+allData=read.csv("allData.csv")
 ```
 
-
-```{r}
-data$DepaDist=paste(data$DEPARTAMENTO,data$PROVINCIA,data$Distrito,sep = "-")
-names(data)
-sel=c("cobertura.cell","Educ.sec.comp","esp.vid.nacer","Ing.fam.p.cap","NBS.2017","No.Pobreza","Tasa.docen_pub")
-dataclust=data[,sel]
-rownames(dataclust)=data$DepaDist
-```
+Caminos
 
 ```{r}
-boxplot(scale(dataclust),horizontal = T,las=2)
-```
-```{r}
-cor(dataclust)
+
+stdData=grep("std$",names(allData),fixed = F)
+decilData=grep("decil$",names(allData),fixed = F)
 ```
 
-
+Camino STD
 ```{r}
-dataclust=as.data.frame(scale(dataclust))
+dataClusStd=allData[,stdData]
+rownames(dataClusStd)=allData$DepaProvDis
 ```
+
+Distancias
 ```{r}
 library(cluster)
 set.seed(123)
-distances=daisy(dataclust,metric='gower')
+distances=daisy(dataClusStd,metric = "euclidean")
 ```
 
+Explorando cantidad a pedir
 ```{r}
 library(factoextra)
-fviz_nbclust(dataclust, 
-             pam,
+set.seed(31)
+fviz_nbclust(x = dataClusStd, 
+             FUNcluster = pam, 
              diss=distances,
-             method = "gap_stat",
-             k.max = 10,verbose = F)
+             method = "wss", 
+             k.max = 10,
+             verbose = F) 
+
+# fviz_nbclust(x = dataClusStd, 
+#              FUNcluster = hcut, 
+#              diss=distances,
+#              method = "wss", 
+#              k.max = 10,
+#              verbose = F,
+#              hc_func = "agnes") 
+# 
+# fviz_nbclust(x = dataClusStd, 
+#              FUNcluster = hcut, 
+#              diss=distances,
+#              method = "wss", 
+#              k.max = 10,
+#              verbose = F,
+#              hc_func = "diana") 
+
+# fviz_nbclust(dataClusStd, 
+#              pam,
+#              diss=distances,
+#              method = "gap_stat",
+#              k.max = 10,verbose = F)
+
+# fviz_nbclust(dataclust, 
+#              hcut,
+#              diss=distances,
+#              method = "gap_stat",
+#              k.max = 10,
+#              verbose = F,
+#              hc_func = "agnes")
+
+# fviz_nbclust(dataclust, 
+#              hcut,
+#              diss=distances,
+#              method = "gap_stat",
+#              k.max = 10,
+#              verbose = F,
+#              hc_func = "diana")
+```
+
+
+Calculando clusters
+
+```{r}
+NumberOfClusterDesired=10
+
+res.pam = pam(x=distances,
+              k = NumberOfClusterDesired,
+              cluster.only = F)
+
+res.agnes= hcut(distances, 
+                k = NumberOfClusterDesired,
+                isdiss=TRUE,
+                hc_func='agnes',
+                hc_method = "ward.D2")
+res.diana= hcut(distances, 
+                k = NumberOfClusterDesired,
+                isdiss=TRUE,
+                hc_func='diana',
+                hc_method = "ward.D2")
+
+allData$pamStd=as.factor(res.pam$clustering)
+allData$agnStd=as.factor(res.agnes$cluster)
+allData$diaStd=as.factor(res.diana$cluster)
+```
+
+Recodificando
+
+```{r}
+aggregate(data=allData,
+          cbind(NBS_2017,NBS_2017_std)~pamStd,
+          FUN=mean)%>%arrange(-NBS_2017)
 ```
 
 ```{r}
-fviz_nbclust(dataclust, 
-             hcut,
-             diss=distances,
-             method = "gap_stat",
-             k.max = 10,
-             verbose = F,
-             hc_func = "agnes")
+library(dplyr)
+
+allData$pamStd=dplyr::recode_factor(allData$pamStd, 
+                  `10` = '10',`1`='9',`5`='8',`7`='7',`4`='6',
+                  `8` = '5',`6`='4',`9`='3',`2`='2',`3`='1')
+allData$agnStd=dplyr::recode_factor(allData$agnStd, 
+                  `10` = '10',`1`='9',`5`='8',`7`='7',`4`='6',
+                  `8` = '5',`6`='4',`9`='3',`2`='2',`3`='1')
+allData$diaStd=dplyr::recode_factor(allData$diaStd, 
+                  `10` = '10',`1`='9',`5`='8',`7`='7',`4`='6',
+                  `8` = '5',`6`='4',`9`='3',`2`='2',`3`='1')
+```
+
+Evaluando:
+
+```{r}
+fviz_silhouette(res.pam)
+```
+```{r}
+fviz_silhouette(res.agnes)
 ```
 
 ```{r}
-fviz_nbclust(dataclust, 
-             hcut,
-             diss=distances,
-             method = "gap_stat",
-             k.max = 10,
-             verbose = F,
-             hc_func = "diana")
+fviz_silhouette(res.diana)
+```
+Validando
+
+```{r}
+table(allData$Zona,allData$pamStd)
 ```
 
+```{r}
+table(allData$Zona,allData$agnStd)
+```
+
+```{r}
+table(allData$Zona,allData$diaStd)
+```
+
+
+Camino DECIL
+```{r}
+dataClusDecil=allData[,decilData]
+rownames(dataClusDecil)=allData$DepaProvDis
+dataClusDecil[,]=lapply(dataClusDecil[,],as.ordered)
+```
+
+```{r}
+library(cluster)
+set.seed(123)
+distancesDEC=daisy(dataClusDecil,metric = "gower")
+hc <- hclust(distancesDEC, method = "ward.D2",)
+plot(hc,labels=F)
+```
+
+```{r}
+
+res.pam = pam(x=distancesDEC,
+              k = NumberOfClusterDesired,
+              cluster.only = F)
+
+res.agnes= hcut(distancesDEC, 
+                k = NumberOfClusterDesired,
+                isdiss=TRUE,
+                hc_func='agnes',
+                hc_method = "ward.D2")
+res.diana= hcut(distancesDEC, 
+                k = NumberOfClusterDesired,
+                isdiss=TRUE,
+                hc_func='diana',
+                hc_method = "ward.D2")
+
+allData$pamDec=as.factor(res.pam$clustering)
+allData$agnDec=as.factor(res.agnes$cluster)
+allData$diaDec=as.factor(res.diana$cluster)
+```
+
+
+```{r}
+aggregate(data=allData,
+          cbind(NBS_2017,NBS_2017_decil)~pamDec,
+          FUN=mean)%>%arrange(-NBS_2017)
+```
+
+
+```{r}
+allData$pamDec=dplyr::recode_factor(allData$pamDec, 
+                  `1` = '10',`9`='9',`5`='8',`10`='7',`7`='6',
+                  `8` = '5',`6`='4',`3`='3',`4`='2',`2`='1')
+allData$agnDec=dplyr::recode_factor(allData$agnDec, 
+                  `1` = '10',`9`='9',`5`='8',`10`='7',`7`='6',
+                  `8` = '5',`6`='4',`3`='3',`4`='2',`2`='1')
+allData$diaDec=dplyr::recode_factor(allData$diaDec, 
+                  `1` = '10',`9`='9',`5`='8',`10`='7',`7`='6',
+                  `8` = '5',`6`='4',`3`='3',`4`='2',`2`='1')
+```
+
+Evaluando
+
+```{r}
+fviz_silhouette(res.pam)
+```
+```{r}
+fviz_silhouette(res.agnes)
+```
+
+```{r}
+fviz_silhouette(res.diana)
+```
+Validando
+
+```{r}
+table(allData$Zona,allData$pamDec)
+```
+
+```{r}
+table(allData$Zona,allData$agnDec)
+```
+
+```{r}
+table(allData$Zona,allData$diaDec)
+```
