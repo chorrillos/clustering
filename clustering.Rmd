@@ -103,6 +103,8 @@ allData$diaStd=as.factor(res.diana$cluster)
 Recodificando
 
 ```{r}
+library(magrittr)
+library(dplyr)
 aggregate(data=allData,
           cbind(NBS_2017,NBS_2017_std)~pamStd,
           FUN=mean)%>%arrange(-NBS_2017)
