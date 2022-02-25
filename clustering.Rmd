@@ -233,3 +233,9 @@ table(allData$Zona,allData$agnDec)
 ```{r}
 table(allData$Zona,allData$diaDec)
 ```
+
+```{r}
+saveRDS(allData,"allData.rds")
+#readRDS(file = "allData.rds")
+```
+
