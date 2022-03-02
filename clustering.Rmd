@@ -233,6 +233,32 @@ table(allData$Zona,allData$agnDec)
 ```{r}
 table(allData$Zona,allData$diaDec)
 ```
+```{r}
+projectedData_std = cmdscale(distances, k=2)
+projectedData_dec = cmdscale(distancesDEC, k=2)
+allData$std1 = projectedData_std[,1]
+allData$std2 = projectedData_std[,2]
+allData$dec1 = projectedData_dec[,1]
+allData$dec2 = projectedData_dec[,2]
+```
+
+
+```{r}
+base= ggplot(data=allData,
+             aes(x=std1, y=std2,
+                 color=Zona)) 
+base + geom_point(alpha=0.5)
+```
+
+
+```{r}
+base= ggplot(data=allData,
+             aes(x=dec1, y=dec2,
+                 color=Zona)) 
+base + geom_point(alpha=0.5)
+```
+
+
 
 ```{r}
 saveRDS(allData,"allData.rds")
