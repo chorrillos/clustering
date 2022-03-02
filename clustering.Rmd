@@ -254,12 +254,40 @@ base + geom_point(alpha=0.5)
 ```{r}
 base= ggplot(data=allData,
              aes(x=dec1, y=dec2,
-                 color=Zona)) 
-base + geom_point(alpha=0.5)
+                 color=pamStd)) 
+base + geom_point(alpha=0.6)+facet_grid(~Zona)
+```
+
+```{r}
+library("dbscan")
+cl <- hdbscan(dataClusStd, minPts = 10)
+allData$hd_clus=as.factor(cl$cluster)
+allData$hd_clusprob=cl$membership_prob
+allData$hd_clusout=cl$outlier_scores
 ```
 
 
+```{r}
+base= ggplot(data=allData,
+             aes(x=std1, y=std2,
+                 color=hd_clus)) 
+base + geom_point(alpha=0.7) + facet_grid(~Zona)
+```
 
+```{r}
+dataClusDecil[,]=lapply(dataClusDecil[,], as.integer)
+cldec <- hdbscan(dataClusDecil, minPts = 10,xdist =distancesDEC )
+allData$hd_clus_d=as.factor(cldec$cluster)
+allData$hd_clusprob_d=cldec$membership_prob
+allData$hd_clusout_d=cldec$outlier_scores
+```
+
+```{r}
+base= ggplot(data=allData,
+             aes(x=dec1, y=dec2,
+                 color=hd_clus_d)) 
+base + geom_point(alpha=0.7) + facet_grid(hd_clus_d~Zona)
+```
 ```{r}
 saveRDS(allData,"allData.rds")
 #readRDS(file = "allData.rds")
