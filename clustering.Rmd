@@ -246,6 +246,14 @@ allData$dec2 = projectedData_dec[,2]
 ```{r}
 base= ggplot(data=allData,
              aes(x=std1, y=std2,
+                 label=Distrito)) 
+base + geom_text(size=0.5)
+```
+
+
+```{r}
+base= ggplot(data=allData,
+             aes(x=std1, y=std2,
                  color=Zona)) 
 base + geom_point(alpha=0.5)
 ```
