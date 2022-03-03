@@ -293,8 +293,8 @@ allData$hd_clusout_d=cldec$outlier_scores
 ```{r}
 base= ggplot(data=allData,
              aes(x=dec1, y=dec2,
-                 color=hd_clus_d)) 
-base + geom_point(alpha=0.7) + facet_grid(hd_clus_d~Zona)
+                 color=hd_clus_d,label=Distrito)) 
+base + geom_point(alpha=0.7) + facet_grid(hd_clus_d~Zona)# + geom_text()
 ```
 ```{r}
 saveRDS(allData,"allData.rds")
